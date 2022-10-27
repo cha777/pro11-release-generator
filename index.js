@@ -19,15 +19,14 @@ async function promptReleaseData() {
   const { server } = await prompt.get({
     properties: {
       server: {
-        description:
-          'Please enter server root folder name. (ex: ../pro11-file-server)',
+        description: 'Please enter server root folder name. (absolute path)',
         type: 'string',
         required: true,
       },
     },
   });
 
-  const serverRoot = path.join(__dirname, server);
+  const serverRoot = path.resolve(server);
 
   console.log(`     server path: ${serverRoot}`);
 
@@ -51,14 +50,12 @@ async function promptReleaseData() {
   const releaseSchema = {
     properties: {
       versionName: {
-        description: 'Release Version Name',
+        description:
+          'Release Version Name (ex: DFNPRO11_SA_RETAIL_X_2.007.00.2)',
         type: 'string',
         required: true,
         conform: (value) => {
           const components = value.split('_');
-
-          // DFNPRO11_SA_RETAIL_X_2.007.00.2
-
           if (components.length !== 5) {
             return false;
           }
