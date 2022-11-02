@@ -3,7 +3,6 @@ const path = require('path');
 const fs = require('fs/promises');
 const AdmZip = require('adm-zip');
 
-const tmpFolderPath = path.join(__dirname, 'tmp');
 const supportedReleaseNoteLangs = ['EN', 'AR'];
 const supportedReleaseNoteTypes = [
   { key: 'newFeatures', description: 'New Features' },
@@ -108,7 +107,12 @@ async function promptReleaseData() {
   };
 }
 
-async function updateZipArchive(staticServerPath, versionNumber, releaseNote) {
+async function updateZipArchive(
+  staticServerPath,
+  extractPath,
+  versionNumber,
+  releaseNote
+) {
   try {
     const versionFolderPath = path.join(
       staticServerPath,
@@ -140,17 +144,17 @@ async function updateZipArchive(staticServerPath, versionNumber, releaseNote) {
       console.log('Updating', path.basename(zipFilePath));
 
       const zip = new AdmZip(zipFilePath);
-      zip.extractAllTo(tmpFolderPath, true);
+      zip.extractAllTo(extractPath, true);
 
       fs.writeFile(
-        `./tmp/${versionNumber}/releaseNote.json`,
+        `${extractPath}/${versionNumber}/releaseNote.json`,
         stringifiedReleaseNote
       );
 
       const updatedZip = new AdmZip();
-      await updatedZip.addLocalFolderPromise(tmpFolderPath);
+      await updatedZip.addLocalFolderPromise(extractPath);
       await updatedZip.writeZipPromise(zipFilePath, { overwrite: true });
-      await fs.rm(tmpFolderPath, { recursive: true, force: true });
+      await fs.rm(extractPath, { recursive: true, force: true });
 
       console.log(`Updated ${zipFilePath} successfully`);
     }
@@ -208,8 +212,14 @@ async function updateVersionInfo(staticServerPath, versionNumber) {
   const { serverRoot, versionNumber, releaseNote } = await promptReleaseData();
 
   const staticServerPath = path.join(serverRoot, 'fileserver/http/public');
+  const tmpFolderPath = path.join(staticServerPath, 'tmp');
 
-  await updateZipArchive(staticServerPath, versionNumber, releaseNote);
+  await updateZipArchive(
+    staticServerPath,
+    tmpFolderPath,
+    versionNumber,
+    releaseNote
+  );
   await updatePrevReleases(staticServerPath, versionNumber, releaseNote);
   await updateVersionInfo(staticServerPath, versionNumber);
 
